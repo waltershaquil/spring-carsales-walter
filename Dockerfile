@@ -1,12 +1,15 @@
-FROM ubuntu:latest AS build
+# Etapa de build com Maven e JDK
+FROM maven:3.9.4-eclipse-temurin-17 AS build
 
-RUN apt-get update
-RUN apt-get install openjdk-23-jdk -y
+WORKDIR /app
 COPY . .
+RUN mvn clean package -DskipTests
 
-RUN apt-get install maven -y
-RUN mvn clean install
+# Etapa de runtime com JDK apenas
+FROM openjdk:17-jdk-slim
 
-FROM openjdk:23-jdk-slim
+WORKDIR /app
+COPY --from=build /app/target/carsSales-0.0.1-SNAPSHOT.jar app.jar
+
 EXPOSE 8080
-COPY --from=build /target/carsSales-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java", "-jar", "app.jar"]
